@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yoruba ↔ English Translator | AI-Powered</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:    #0f0b1a;
+      --indigo: #1d1650;
+      --deep:   #2b1f72;
+      --mid:    #4a3b9c;
+      --terra:  #c8531a;
+      --gold:   #e8a414;
+      --cream:  #fdf4e3;
+      --muted:  #b0a5c8;
+      --glass:  rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.12);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--ink);
+      color: var(--cream);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, #2b1f72 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, #1d1650 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 60% 30%, rgba(200,83,26,.18) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+      animation: bgPulse 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgPulse {
+      from { opacity: 1; }
+      to   { opacity: .85; }
+    }
+
+    /* ── Adire-inspired pattern ── */
+    .pattern {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .04;
+      background-image:
+        repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 1px, transparent 0, transparent 50%),
+        repeating-linear-gradient(-45deg, var(--gold) 0, var(--gold) 1px, transparent 0, transparent 50%);
+      background-size: 28px 28px;
+    }
+
+    main { position: relative; z-index: 1; }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 4rem 1.5rem 2rem;
+      animation: fadeDown .8s ease both;
+    }
+
+    .logo-badge {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 2rem; padding: .35rem .9rem;
+      font-size: .75rem; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 1.5rem;
+    }
+
+    .logo-badge span { font-size: 1rem; }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      font-weight: 700;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fdf4e3 0%, #e8a414 50%, #c8531a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: .6rem;
+    }
+
+    .subtitle {
+      font-size: 1.05rem; font-weight: 300;
+      color: var(--muted); letter-spacing: .02em;
+    }
+
+    /* ── API Key bar ── */
+    .key-bar {
+      max-width: 640px; margin: 0 auto 2.5rem;
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 1rem; padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: .75rem;
+      animation: fadeDown .8s .1s ease both;
+    }
+
+    .key-bar label {
+      font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--gold); white-space: nowrap; flex-shrink: 0;
+    }
+
+    .key-bar input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: var(--cream); font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; letter-spacing: .04em;
+    }
+
+    .key-bar input::placeholder { color: var(--muted); }
+
+    .key-toggle {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 1rem; transition: color .2s;
+    }
+    .key-toggle:hover { color: var(--cream); }
+
+    /* ── Translator card ── */
+    .card {
+      max-width: 900px; margin: 0 auto 5rem; padding: 0 1.5rem;
+      animation: fadeUp .9s .2s ease both;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    @media (max-width: 640px) {
+      .panels { grid-template-columns: 1fr; }
+      .swap-btn { transform: rotate(90deg); }
+    }
+
+    .panel {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      overflow: hidden;
+      transition: border-color .3s;
+    }
+
+    .panel:focus-within { border-color: rgba(232,164,20,.4); }
+
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .8rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+
+    .lang-tag {
+      font-size: .78rem; font-weight: 500; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--gold);
+      display: flex; align-items: center; gap: .4rem;
+    }
+
+    .lang-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--gold); display: inline-block;
+    }
+
+    .copy-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: .8rem; color: var(--muted);
+      display: flex; align-items: center; gap: .3rem;
+      transition: color .2s; padding: .2rem .4rem; border-radius: .4rem;
+    }
+    .copy-btn:hover { color: var(--cream); background: rgba(255,255,255,.06); }
+    .copy-btn svg { width: 14px; height: 14px; }
+
+    textarea {
+      width: 100%; min-height: 200px; padding: 1.1rem;
+      background: transparent; border: none; outline: none; resize: vertical;
+      color: var(--cream); font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; line-height: 1.65;
+    }
+
+    textarea::placeholder { color: rgba(176,165,200,.5); }
+
+    .output-text {
+      min-height: 200px; padding: 1.1rem;
+      font-size: 1rem; line-height: 1.65; color: var(--cream);
+      position: relative;
+    }
+
+    .output-text.loading::after {
+      content: '';
+      display: inline-block; width: 3px; height: 1.1em;
+      background: var(--gold); margin-left: 2px;
+      animation: blink .7s step-end infinite;
+      vertical-align: text-bottom;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .placeholder-text { color: rgba(176,165,200,.4); font-size: .95rem; }
+
+    /* ── Swap button ── */
+    .swap-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--glass); border: 1px solid var(--border);
+      cursor: pointer; color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      transition: all .25s; align-self: center; margin-top: 2.4rem;
+      flex-shrink: 0;
+    }
+    .swap-btn:hover { color: var(--gold); border-color: rgba(232,164,20,.4); background: rgba(232,164,20,.08); }
+    .swap-btn svg { width: 18px; height: 18px; }
+
+    /* ── Translate button ── */
+    .actions { margin-top: 1.25rem; display: flex; gap: .75rem; justify-content: center; }
+
+    .btn-translate {
+      display: inline-flex; align-items: center; gap: .55rem;
+      background: linear-gradient(135deg, var(--terra), var(--gold));
+      color: #fff; border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 500;
+      padding: .8rem 2.2rem; border-radius: 3rem;
+      box-shadow: 0 4px 24px rgba(200,83,26,.35);
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+    .btn-translate:hover { transform: translateY(-1px); box-shadow: 0 6px 32px rgba(200,83,26,.45); }
+    .btn-translate:active { transform: translateY(0); }
+    .btn-translate:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .btn-clear {
+      background: var(--glass); border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: .9rem;
+      padding: .8rem 1.4rem; border-radius: 3rem;
+      transition: all .2s;
+    }
+    .btn-clear:hover { color: var(--cream); border-color: rgba(255,255,255,.25); }
+
+    /* ── Error / char count ── */
+    .meta-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .55rem 1.1rem;
+      border-top: 1px solid var(--border);
+      font-size: .75rem; color: var(--muted);
+    }
+
+    .error-msg { color: #f87171; font-size: .85rem; text-align: center; margin-top: .75rem; display: none; }
+    .error-msg.show { display: block; }
+
+    /* ── Tips ── */
+    .tips {
+      max-width: 900px; margin: 0 auto 3rem; padding: 0 1.5rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;
+      animation: fadeUp .9s .4s ease both;
+    }
+
+    .tip {
+      background: var(--glass); border: 1px solid var(--border);
+      border-radius: 1rem; padding: 1rem 1.15rem;
+      display: flex; align-items: flex-start; gap: .7rem;
+    }
+
+    .tip-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: .05rem; }
+    .tip-text { font-size: .82rem; line-height: 1.5; color: var(--muted); }
+    .tip-text strong { color: var(--cream); display: block; margin-bottom: .2rem; font-weight: 500; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: .8rem; color: var(--muted);
+    }
+
+    footer a { color: var(--gold); text-decoration: none; }
+
+    /* ── Animations ── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Success flash ── */
+    .copy-flash { color: #4ade80 !important; }
+  </style>
+</head>
+<body>
+  <div class="pattern" aria-hidden="true"></div>
+
+  <main>
+    <header>
+      <div class="logo-badge"><span>🌍</span> AI-Powered Translation</div>
+      <h1>Yoruba ↔ English</h1>
+      <p class="subtitle">Preserve the language. Bridge the worlds.</p>
+    </header>
+
+    <!-- API Key -->
+    <div class="key-bar" title="Your key is stored in memory only and never sent anywhere except Anthropic's API">
+      <label>API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-…  (your Anthropic key)" autocomplete="off" />
+      <button class="key-toggle" id="keyToggle" aria-label="Show/hide key" title="Toggle visibility">👁</button>
+    </div>
+
+    <!-- Panels -->
+    <div class="card">
+      <div class="panels">
+
+        <!-- Input panel -->
+        <div class="panel" id="inputPanel">
+          <div class="panel-header">
+            <span class="lang-tag" id="srcLabel"><span class="lang-dot"></span> Yoruba</span>
+            <button class="copy-btn" id="copyIn" title="Copy input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <textarea id="inputText" placeholder="Ẹ káàárọ̀… (Type or paste Yoruba text here)" rows="8" spellcheck="false"></textarea>
+          <div class="meta-row">
+            <span id="charCount">0 chars</span>
+            <span>Yoruba → English</span>
+          </div>
+        </div>
+
+        <!-- Swap -->
+        <button class="swap-btn" id="swapBtn" title="Swap languages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 16V4m0 0L3 8m4-4 4 4M17 8v12m0 0 4-4m-4 4-4-4"/>
+          </svg>
+        </button>
+
+        <!-- Output panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="lang-tag" id="tgtLabel"><span class="lang-dot"></span> English</span>
+            <button class="copy-btn" id="copyOut" title="Copy translation">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <div class="output-text" id="outputText">
+            <span class="placeholder-text">Translation appears here…</span>
+          </div>
+          <div class="meta-row">
+            <span id="outChars">—</span>
+            <span id="statusLabel">Idle</span>
+          </div>
+        </div>
+
+      </div><!-- .panels -->
+
+      <div class="actions">
+        <button class="btn-clear" id="clearBtn">Clear</button>
+        <button class="btn-translate" id="translateBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          Translate
+        </button>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips">
+      <div class="tip">
+        <span class="tip-icon">🔑</span>
+        <div class="tip-text"><strong>API Key Required</strong>Enter your Anthropic API key above. It stays in memory only.</div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">🔄</span>
+        <div class="tip-text"><strong>Bidirectional</strong>Use the swap button to translate English → Yoruba too.</div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">🎯</span>
+        <div class="tip-text"><strong>Tonal accuracy</strong>The AI understands Yoruba tone marks (àáâ) and diacritics.</div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">📋</span>
+        <div class="tip-text"><strong>Copy result</strong>Use the copy button on either panel to copy text to clipboard.</div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>Built with <a href="https://anthropic.com" target="_blank">Claude AI</a> · Yoruba is spoken by over 45 million people worldwide 🌍</p>
+  </footer>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    // State
+    let swapped = false;
+    let isTranslating = false;
+
+    // Key visibility toggle
+    $('keyToggle').addEventListener('click', () => {
+      const inp = $('apiKey');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    });
+
+    // Char count
+    $('inputText').addEventListener('input', () => {
+      const n = $('inputText').value.length;
+      $('charCount').textContent = n + ' char' + (n !== 1 ? 's' : '');
+    });
+
+    // Swap languages
+    $('swapBtn').addEventListener('click', () => {
+      swapped = !swapped;
+      const src = swapped ? 'English' : 'Yoruba';
+      const tgt = swapped ? 'Yoruba' : 'English';
+      $('srcLabel').innerHTML = `<span class="lang-dot"></span> ${src}`;
+      $('tgtLabel').innerHTML = `<span class="lang-dot"></span> ${tgt}`;
+      $('inputText').placeholder = swapped
+        ? 'Good morning… (Type or paste English text here)'
+        : 'Ẹ káàárọ̀… (Type or paste Yoruba text here)';
+
+      // Swap content between panels
+      const currentIn = $('inputText').value;
+      const currentOut = $('outputText').innerText.replace('Translation appears here…', '').trim();
+      if (currentOut) {
+        $('inputText').value = currentOut;
+        $('outputText').innerHTML = currentIn || '<span class="placeholder-text">Translation appears here…</span>';
+        $('charCount').textContent = $('inputText').value.length + ' chars';
+        $('outChars').textContent = currentIn ? currentIn.length + ' chars' : '—';
+      }
+    });
+
+    // Copy buttons
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copy-flash');
+        btn.innerHTML = btn.innerHTML.replace('Copy', 'Copied!');
+        setTimeout(() => {
+          btn.classList.remove('copy-flash');
+          btn.innerHTML = btn.innerHTML.replace('Copied!', 'Copy');
+        }, 1800);
+      });
+    }
+
+    $('copyIn').addEventListener('click', () => copyText($('inputText').value, $('copyIn')));
+    $('copyOut').addEventListener('click', () => {
+      const txt = $('outputText').innerText.replace('Translation appears here…', '').trim();
+      copyText(txt, $('copyOut'));
+    });
+
+    // Clear
+    $('clearBtn').addEventListener('click', () => {
+      $('inputText').value = '';
+      $('outputText').innerHTML = '<span class="placeholder-text">Translation appears here…</span>';
+      $('charCount').textContent = '0 chars';
+      $('outChars').textContent = '—';
+      $('statusLabel').textContent = 'Idle';
+      $('errorMsg').className = 'error-msg';
+    });
+
+    // Translate
+    $('translateBtn').addEventListener('click', translate);
+    $('inputText').addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') translate();
+    });
+
+    async function translate() {
+      if (isTranslating) return;
+      const apiKey = $('apiKey').value.trim();
+      const text   = $('inputText').value.trim();
+      const err    = $('errorMsg');
+
+      if (!apiKey) { showError('Please enter your Anthropic API key above.'); return; }
+      if (!text)   { showError('Please type some text to translate.'); return; }
+
+      const src = swapped ? 'English' : 'Yoruba';
+      const tgt = swapped ? 'Yoruba' : 'English';
+
+      isTranslating = true;
+      $('translateBtn').disabled = true;
+      $('outputText').innerHTML  = '';
+      $('outputText').classList.add('loading');
+      $('statusLabel').textContent = 'Translating…';
+      err.className = 'error-msg';
+
+      const systemPrompt = `You are an expert linguist specialising in Yoruba and English. When given text in ${src}, translate it faithfully and naturally into ${tgt}. Preserve tone, idiom and cultural nuance. Return ONLY the translated text — no explanations, no notes.`;
+
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type':      'application/json',
+            'x-api-key':         apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model:      'claude-opus-4-20250514',
+            max_tokens: 1024,
+            system:     systemPrompt,
+            messages:   [{ role: 'user', content: text }]
+          })
+        });
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error?.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const out  = (data.content?.[0]?.text || '').trim();
+
+        $('outputText').classList.remove('loading');
+        $('outputText').textContent = out || '(No translation returned)';
+        $('outChars').textContent   = out.length + ' chars';
+        $('statusLabel').textContent = 'Done ✓';
+      } catch (e) {
+        $('outputText').classList.remove('loading');
+        $('outputText').innerHTML = '<span class="placeholder-text">Translation appears here…</span>';
+        showError('Error: ' + e.message);
+        $('statusLabel').textContent = 'Error';
+      } finally {
+        isTranslating = false;
+        $('translateBtn').disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      const el = $('errorMsg');
+      el.textContent  = msg;
+      el.className    = 'error-msg show';
+    }
+  </script>
+</body>
+</html>
